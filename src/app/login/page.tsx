@@ -49,21 +49,6 @@ export default function LoginPage() {
             </p>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-            className="p-5 glass-panel rounded-2xl flex gap-4"
-          >
-            <div className="text-4xl">🌾</div>
-            <div>
-              <p className="text-xs font-semibold text-amber-500 uppercase tracking-widest">Dica de Acesso</p>
-              <p className="text-sm text-slate-300 mt-0.5">
-                Utilize as credenciais padrão do sistema: <br />
-                <code className="text-emerald-400 font-semibold">admin@agrovendas.com.br</code> com senha <code className="text-emerald-400 font-semibold">admin123</code>.
-              </p>
-            </div>
-          </motion.div>
         </div>
 
         <div className="z-10">
@@ -150,13 +135,6 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          {/* Tips for mobile users */}
-          <div className="mt-8 md:hidden p-4 bg-slate-900/60 border border-slate-800/80 rounded-2xl">
-            <p className="text-xs font-semibold text-amber-500 uppercase tracking-widest">Dica de Acesso</p>
-            <p className="text-xs text-slate-400 mt-1">
-              admin@agrovendas.com.br / admin123
-            </p>
-          </div>
         </motion.div>
       </div>
     </div>
