@@ -13,26 +13,20 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#030712] relative overflow-hidden">
-      {/* Background Image for entire screen (subtle texture) */}
+      {/* Background Image for entire screen (visible integrated texture) */}
       <div 
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-[0.06] pointer-events-none"
-        style={{ backgroundImage: 'url("/agriculture_bg.png")' }}
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-[0.32] pointer-events-none"
+        style={{ backgroundImage: 'url("/agro_meeting_bg.png")' }}
       />
+      {/* Dark gradient overlay across the whole screen for supreme readability */}
+      <div className="absolute inset-0 z-0 bg-gradient-to-r from-slate-950/95 via-slate-950/80 to-slate-950/90 pointer-events-none" />
 
       {/* Background glowing spheres */}
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-950/20 blur-[120px] pointer-events-none z-0" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-amber-950/10 blur-[120px] pointer-events-none z-0" />
 
       {/* LEFT SIDE - Branding and agro aesthetic details */}
-      <div className="hidden md:flex md:w-1/2 p-12 lg:p-16 flex-col justify-between relative border-r border-slate-900 overflow-hidden">
-        {/* Left Side Background Image */}
-        <div 
-          className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-25 pointer-events-none"
-          style={{ backgroundImage: 'url("/agriculture_bg.png")' }}
-        />
-        {/* Left Side Dark Gradient Overlay */}
-        <div className="absolute inset-0 z-0 bg-gradient-to-b from-slate-950/90 via-slate-950/70 to-slate-950/95 pointer-events-none" />
-
+      <div className="hidden md:flex md:w-1/2 p-12 lg:p-16 flex-col justify-between relative border-r border-slate-900/60">
         <div className="flex items-center gap-2.5 z-10">
           <div className="p-2 bg-emerald-600/10 border border-emerald-500/20 rounded-xl text-emerald-400">
             <IconPlant size={24} />
