@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { createUser, toggleUserStatus } from '@/app/actions/users';
+import { createUser, toggleUserStatus, updateUser } from '@/app/actions/users';
 import {
   IconUsers,
   IconPlus,
@@ -37,6 +37,7 @@ export function TenantUsersManager({
 }: TenantUsersManagerProps) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
   const [statusLoadingId, setStatusLoadingId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -61,6 +62,27 @@ export function TenantUsersManager({
       setSuccess(true);
       setLoading(false);
       setShowForm(false);
+      router.refresh();
+    }
+  }
+
+  async function handleEdit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!editingUser) return;
+    setLoading(true);
+    setMessage(null);
+    setSuccess(false);
+    setErrors({});
+    const formData = new FormData(e.currentTarget);
+    const response = await updateUser(editingUser.id, companyId, undefined, formData);
+    if (response && !response.success) {
+      setErrors(response.errors || {});
+      setMessage(response.message || null);
+      setLoading(false);
+    } else {
+      setSuccess(true);
+      setLoading(false);
+      setEditingUser(null);
       router.refresh();
     }
   }
@@ -119,7 +141,7 @@ export function TenantUsersManager({
         <UsageBar value={usersList.length} max={maxUsers} />
       </div>
 
-      {/* Formulário inline */}
+      {/* Formulário inline - Cadastro */}
       {showForm && isAdmin && (
         <div className="glass-panel p-6 rounded-2xl border border-slate-900 bg-slate-950/25">
           <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2">
@@ -169,6 +191,56 @@ export function TenantUsersManager({
         </div>
       )}
 
+      {/* Formulário inline - Edição */}
+      {editingUser && isAdmin && (
+        <div className="glass-panel p-6 rounded-2xl border border-slate-900 bg-slate-950/25">
+          <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <IconUser size={16} className="text-amber-400" />
+            Editar Usuário: <span className="text-amber-400">{editingUser.name}</span>
+          </h3>
+          <form onSubmit={handleEdit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-400 block">Nome Completo</label>
+              <input type="text" name="name" required defaultValue={editingUser.name}
+                className="w-full bg-slate-950/80 border border-slate-900 focus:border-emerald-500/50 rounded-xl px-4 py-2 text-slate-200 text-sm outline-none" />
+              {errors.name && <p className="text-xs text-rose-400">{errors.name[0]}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-400 block">E-mail</label>
+              <input type="email" name="email" required defaultValue={editingUser.email}
+                className="w-full bg-slate-950/80 border border-slate-900 focus:border-emerald-500/50 rounded-xl px-4 py-2 text-slate-200 text-sm outline-none" />
+              {errors.email && <p className="text-xs text-rose-400">{errors.email[0]}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-400 block">Alterar Senha (Opcional)</label>
+              <input type="password" name="password" placeholder="Deixe em branco para manter"
+                className="w-full bg-slate-950/80 border border-slate-900 focus:border-emerald-500/50 rounded-xl px-4 py-2 text-slate-200 text-sm outline-none" />
+              {errors.password && <p className="text-xs text-rose-400">{errors.password[0]}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-400 block">Função</label>
+              <select name="role" required defaultValue={editingUser.role}
+                className="w-full bg-slate-950 border border-slate-900 focus:border-emerald-500/50 rounded-xl px-4 py-2.5 text-slate-200 text-sm outline-none">
+                <option value="COMPANY_USER">Vendedor / Operador</option>
+                <option value="COMPANY_ADMIN">Administrador</option>
+              </select>
+              {errors.role && <p className="text-xs text-rose-400">{errors.role[0]}</p>}
+            </div>
+            <div className="md:col-span-2 flex justify-end gap-2">
+              <button type="button" onClick={() => setEditingUser(null)}
+                className="px-4 py-2 bg-slate-900 border border-slate-800 text-slate-400 text-xs font-semibold rounded-xl">
+                Cancelar
+              </button>
+              <button type="submit" disabled={loading}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-xl inline-flex items-center gap-1">
+                {loading ? <IconLoader className="animate-spin" size={14} /> : null}
+                Salvar Alterações
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* Tabela */}
       <div className="glass-panel p-6 rounded-2xl border border-slate-900">
         <div className="overflow-x-auto">
@@ -211,13 +283,21 @@ export function TenantUsersManager({
                   </td>
                   {isAdmin && (
                     <td className="py-4 px-4 text-right">
-                      <button
-                        onClick={() => handleToggle(u.id)}
-                        disabled={statusLoadingId === u.id}
-                        className={`text-xs font-bold px-3 py-1.5 rounded-xl transition-all cursor-pointer bg-slate-900 border border-slate-800 hover:bg-slate-800 ${u.isActive ? 'text-rose-400' : 'text-emerald-400'}`}
-                      >
-                        {statusLoadingId === u.id ? <IconLoader className="animate-spin" size={12} /> : u.isActive ? 'Desativar' : 'Ativar'}
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => { setEditingUser(u); setShowForm(false); setMessage(null); setErrors({}); }}
+                          className="text-xs font-bold px-3 py-1.5 rounded-xl transition-all cursor-pointer bg-slate-900 border border-slate-800 hover:bg-slate-800 text-amber-400 hover:border-amber-500/30"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => handleToggle(u.id)}
+                          disabled={statusLoadingId === u.id}
+                          className={`text-xs font-bold px-3 py-1.5 rounded-xl transition-all cursor-pointer bg-slate-900 border border-slate-800 hover:bg-slate-800 ${u.isActive ? 'text-rose-400' : 'text-emerald-400'}`}
+                        >
+                          {statusLoadingId === u.id ? <IconLoader className="animate-spin" size={12} /> : u.isActive ? 'Desativar' : 'Ativar'}
+                        </button>
+                      </div>
                     </td>
                   )}
                 </tr>
