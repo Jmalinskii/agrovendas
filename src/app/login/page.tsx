@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useActionState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { login } from '@/app/actions/auth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -8,7 +9,8 @@ import { IconMail, IconLock, IconPlant, IconTrendingUp } from '@tabler/icons-rea
 import { motion } from 'framer-motion';
 
 export default function LoginPage() {
-  // Use React 19 useActionState hook with our Server Action
+  const searchParams = useSearchParams();
+  const isBlocked = searchParams.get('error') === 'blocked';
   const [state, formAction, isPending] = useActionState(login, undefined);
 
   return (
@@ -80,6 +82,15 @@ export default function LoginPage() {
             </div>
 
             <form action={formAction} className="space-y-6">
+              {isBlocked && (
+                <div className="p-4 bg-rose-950/40 border border-rose-500/30 rounded-xl text-rose-300 text-xs font-semibold flex items-start gap-2">
+                  <span className="text-rose-400 text-lg leading-none">🔒</span>
+                  <div>
+                    <p className="font-bold text-rose-300 mb-0.5">Acesso Suspenso</p>
+                    <p className="text-rose-400/80 font-medium">Sua empresa está inativa por pendências financeiras. Entre em contato com o suporte AgroVendas para regularização.</p>
+                  </div>
+                </div>
+              )}
               {state?.message && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}

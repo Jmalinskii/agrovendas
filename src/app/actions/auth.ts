@@ -2,7 +2,7 @@
 
 import { LoginFormSchema, type FormState } from '@/lib/definitions';
 import { db } from '@/db';
-import { users } from '@/db/schema';
+import { users, companies } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import * as bcrypt from 'bcryptjs';
 import { createSession, deleteSession } from '@/lib/session';
@@ -21,11 +21,20 @@ export async function login(state: FormState, formData: FormData): Promise<FormS
     };
   }
 
-  // 2. Busca usuário no banco pelo e-mail
-  let user;
+  // 2. Busca usuário + empresa no banco pelo e-mail
+  let userRecord;
   try {
-    const data = await db.select().from(users).where(eq(users.email, validatedFields.data.email)).limit(1);
-    user = data[0];
+    const data = await db
+      .select({
+        user: users,
+        company: companies,
+      })
+      .from(users)
+      .leftJoin(companies, eq(users.companyId, companies.id))
+      .where(eq(users.email, validatedFields.data.email))
+      .limit(1);
+    
+    userRecord = data[0];
   } catch (error) {
     console.error('Erro de conexão ao autenticar:', error);
     return {
@@ -33,11 +42,13 @@ export async function login(state: FormState, formData: FormData): Promise<FormS
     };
   }
 
-  if (!user) {
+  if (!userRecord || !userRecord.user) {
     return {
       message: 'E-mail ou senha incorretos.',
     };
   }
+
+  const { user, company } = userRecord;
 
   // 3. Compara hashes de senha com bcrypt
   const passwordMatch = await bcrypt.compare(validatedFields.data.password, user.password);
@@ -48,10 +59,41 @@ export async function login(state: FormState, formData: FormData): Promise<FormS
     };
   }
 
-  // 4. Cria sessão e redireciona
-  await createSession(user.id);
+  // 4. Valida se usuário está ativo
+  if (!user.isActive) {
+    return {
+      message: 'Acesso recusado. Seu usuário está desativado.',
+    };
+  }
+
+  // 5. Valida se a empresa está ativa (se não for SUPER_ADMIN)
+  if (user.role !== 'SUPER_ADMIN') {
+    if (!company) {
+      return {
+        message: 'Erro interno: Empresa não encontrada para este usuário.',
+      };
+    }
+    if (!company.isActive) {
+      return {
+        message: 'Acesso suspenso. Sua empresa está inativa ou possui pendências financeiras. Entre em contato com o suporte.',
+      };
+    }
+  }
+
+  // 6. Cria sessão e redireciona
+  const companyId = company?.id || null;
+  const companySlug = company?.slug || null;
+  const userRole = user.role as 'SUPER_ADMIN' | 'COMPANY_ADMIN' | 'COMPANY_USER';
+
+  await createSession(user.id, companyId, userRole, companySlug);
   
-  redirect('/dashboard');
+  if (userRole === 'SUPER_ADMIN') {
+    redirect('/super-admin');
+  } else if (companySlug) {
+    redirect(`/${companySlug}/dashboard`);
+  } else {
+    redirect('/login');
+  }
 }
 
 export async function logout() {
